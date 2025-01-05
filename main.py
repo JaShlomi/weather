@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-def get_weather_data(city, country=None, state=None, api_key='2962c0531021bfa04c3a252c316c4437'):
+def get_weather_data(city, country=None, state=None, api_key=None):
   """
   Fetches weather data for a given city using the OpenWeatherMap API.
 
@@ -62,7 +62,7 @@ def web_temp():
 
   if st.button("Get Weather"):
     if country_code and city_state:
-      weather_info = get_weather_data(city_name, country_code, city_state)
+      weather_info = get_weather_data(city_name, country_code, city_state,st.secrets['secret_key'])
     elif country_code:
       weather_info = get_weather_data(city_name, country_code)
     elif city_state:
