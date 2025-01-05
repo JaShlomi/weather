@@ -62,13 +62,13 @@ def web_temp():
 
   if st.button("Get Weather"):
     if country_code and city_state:
-      weather_info = get_weather_data(city_name, country_code, city_state,st.secrets['secret_key'])
+      weather_info = get_weather_data(city_name, country_code, city_state,api_key = st.secrets['secret_key'])
     elif country_code:
-      weather_info = get_weather_data(city_name, country_code)
+      weather_info = get_weather_data(city_name, country_code, api_key = st.secrets['secret_key'])
     elif city_state:
-      weather_info = get_weather_data(city_name, state=city_state)
+      weather_info = get_weather_data(city_name, city_state, api_key = st.secrets['secret_key'])
     else:
-      weather_info = get_weather_data(city_name)
+      weather_info = get_weather_data(city_name, api_key = st.secrets['secret_key'])
 
     if weather_info:
       st.success(f"Weather in {city_name}:")
