@@ -1,95 +1,17 @@
-'''import streamlit as st
 import requests
-
-def get_weather_data(city, country=None, state=None, api_key=None):
-  """
-  Fetches weather data for a given city using the OpenWeatherMap API.
-
-  Args:
-    city: The name of the city.
-    country: The two-letter country code (optional).
-    state: The state or region (optional).
-    api_key: Your OpenWeatherMap API key.
-
-  Returns:
-    A dictionary containing temperature, weather description, and humidity,
-    or None if the city is not found or an error occurs.
-  """
-
-  base_url = "http://api.openweathermap.org/data/2.5/weather?"
-  query_params = f"appid={api_key}&units=metric"
-
-  if country and state:
-    query_params += f"&q={city},{state},{country}"
-  elif country:
-    query_params += f"&q={city},{country}"
-  elif state:
-    query_params += f"&q={city},{state}"
-  else:
-    query_params += f"&q={city}"
-
-  complete_url = f"{base_url}{query_params}"
-
-  try:
-    response = requests.get(complete_url)
-    response.raise_for_status()  # Raise an exception for bad status codes
-
-    data = response.json()
-    for key, value in data.items():
-      print(f"{key}: {value}")
-
-
-    if data['cod'] == 200:
-      weather_data = {
-          'temperature': data['main']['temp'],
-          'description': data['weather'][0]['description'],
-          'humidity': data['main']['humidity']
-      }
-      return weather_data
-    else:
-      st.error(f"City '{city}' not found.")
-      return None
-
-  except requests.exceptions.RequestException as e:
-    st.error(f"Error fetching data: {e}")
-    return None
-
-result = get_weather_data(city = 'london',api_key='2962c0531021bfa04c3a252c316c4437')
-
-# Streamlit app
-def web_temp():
-  st.title("Weather App")
-
-  city_name = st.text_input("Enter City Name:")
-  country_code = st.text_input("Enter Two-Letter Country Code (optional):")
-  city_state = st.text_input("Enter State/Region (optional):")
-
-  if st.button("Get Weather"):
-    if country_code and city_state:
-      weather_info = get_weather_data(city_name, country_code, city_state,api_key = st.secrets['secret_key'])
-    elif country_code:
-      weather_info = get_weather_data(city_name, country_code, api_key = st.secrets['secret_key'])
-    elif city_state:
-      weather_info = get_weather_data(city_name, city_state, api_key = st.secrets['secret_key'])
-    else:
-      weather_info = get_weather_data(city_name, api_key = st.secrets['secret_key'])
-
-    if weather_info:
-      st.success(f"Weather in {city_name}:")
-      st.write(f"Temperature: {weather_info['temperature']:.2f}°C")
-      st.write(f"Weather Condition: {weather_info['description']}")
-      st.write(f"Humidity: {weather_info['humidity']}%")
-
-if __name__ == "__main__":
-  web_temp()'''
-import requests
-from datetime import datetime
 import streamlit as st
+import pandas as pd
+import random
+import time
+from datetime import datetime, timezone, timedelta
 
-def get_coordinates(city, country=None, api_key=None):
+
+def get_coordinates(city, country=None, state=None, api_key=None):
     base_url = "http://api.openweathermap.org/geo/1.0/direct?"
     query_params = f"q={city}"
 
+    if state:
+        query_params += f",{state}"
     if country:
         query_params += f",{country}"
 
@@ -97,15 +19,11 @@ def get_coordinates(city, country=None, api_key=None):
     complete_url = f"{base_url}{query_params}"
 
     response = requests.get(complete_url)
-    data = response.json()
-
-    if data:
-        return {
-            'lat': round(data[0]['lat'], 2),
-            'lon': round(data[0]['lon'], 2)
-        }
-    else:
-        return None
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            return {'lat': round(data[0]['lat'], 3), 'lon': round(data[0]['lon'], 3)}
+    return None
 
 def get_weather_data(lat, lon, api_key=None):
     base_url = "https://api.openweathermap.org/data/2.5/weather?"
@@ -113,50 +31,136 @@ def get_weather_data(lat, lon, api_key=None):
     complete_url = f"{base_url}{query_params}"
 
     response = requests.get(complete_url)
-    data = response.json()
-
-    if 'coord' in data:
-        return data
-    else:
-        return None
+    if response.status_code == 200:
+        data = response.json()
+        if 'coord' in data:
+            return data
+    return None
 
 def display_weather(weather_data):
-    st.write(f"Weather in {weather_data['name']}:")
-    st.write(f"Temperature: {weather_data['main']['temp']:.2f}°C")
-    st.write(f"Weather Condition: {weather_data['weather'][0]['description']}")
+    # Calculate the local time at the destination based on timezone offset
+    utc_time = datetime.fromtimestamp(weather_data['dt'], timezone.utc)
+    local_time = utc_time + timedelta(seconds=weather_data['timezone'])
+    formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    st.image(f"http://openweathermap.org/img/wn/{weather_data['weather'][0]['icon']}@2x.png", width=60)
+    st.write(f"**{weather_data['name']}**")
+    st.write(f"Temp: {weather_data['main']['temp']:.2f}°C")
     st.write(f"Humidity: {weather_data['main']['humidity']}%")
-    st.write(f"{weather_data['name']} Time: {datetime.fromtimestamp(weather_data['dt']).strftime('%Y-%m-%d %H:%M:%S')}")
-    st.write(f"Local Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    st.image(f"http://openweathermap.org/img/wn/{weather_data['weather'][0]['icon']}@2x.png", caption="Weather Icon")
+    st.write(f":clock3: {formatted_time}")
 
 # Streamlit app
-st.title("Weather Information")
 
-# Major cities section
-st.header("Major Cities")
-cities = ["Paris", "London", "New York", "Los Angeles", "Rio de Janeiro", "Sydney", "Tokyo", "Moscow", "Beijing", "Mumbai", "Cairo", "Cape Town"]
-country_codes = ["FR", "GB", "US", "US", "BR", "AU", "JP", "RU", "CN", "IN", "EG", "ZA"]
+# Set Streamlit to wide mode
+st.set_page_config(layout="wide")
 
-for city, country in zip(cities, country_codes):
-    coordinates = get_coordinates(city, country, api_key=st.secrets['secret_key'])
-    if coordinates:
-        weather_data = get_weather_data(coordinates['lat'], coordinates['lon'], api_key=st.secrets['secret_key'])
-        if weather_data:
-            display_weather(weather_data)
-            st.write("---")
+st.title("_Weather_ :blue[Information App]   :rain_cloud::sun_small_cloud:")
 
-# Specific destination section
-st.header("Specific Destination")
-city_name = st.text_input("Enter city name")
-country_code = st.text_input("Enter country code (optional)")
+# Create a single container for the entire app
+main_container = st.container()
 
-if st.button("Get Weather"):
-    coordinates = get_coordinates(city_name, country_code, api_key=st.secrets['secret_key'])
-    if coordinates:
-        weather_data = get_weather_data(coordinates['lat'], coordinates['lon'], api_key=st.secrets['secret_key'])
-        if weather_data:
-            display_weather(weather_data)
-        else:
-            st.error("Weather data not found. Please try again.")
-    else:
-        st.error("City not found or an error occurred. Please try again.")
+# 3 columns: Search, Weather Data & Map, Major Cities
+with main_container:
+    col1, col2, col3 = st.columns([1.8, 2.4, 6.2])
+
+    with col1:
+        st.header(":red[Location:]")
+        city_name = st.text_input("Enter city name", key="city")
+        country_code = st.text_input("Enter country code (optional)", key="country")
+        state_name = st.text_input("Enter state (optional)", key="state")
+
+        if st.button("Get Weather"):
+            coordinates = get_coordinates(city_name, country_code, state_name, api_key=st.secrets['secret_key'])
+            if coordinates:
+                st.session_state.coordinates = coordinates
+            else:
+                st.error("Failed to fetch coordinates. Please check your input or try again later.")
+
+    with col2:
+        st.header(":red[Weather at:]")
+        if 'coordinates' in st.session_state and st.session_state.coordinates:
+            weather_data = get_weather_data(st.session_state.coordinates['lat'], st.session_state.coordinates['lon'], api_key=st.secrets['secret_key'])
+            if weather_data:
+                display_weather(weather_data)
+                df = pd.DataFrame({'lat': [st.session_state.coordinates['lat']], 'lon': [st.session_state.coordinates['lon']]})
+                st.map(df, use_container_width=True, height=200)
+            else:
+                st.error("Failed to fetch weather data. Please try again later.")
+
+    with col3:
+        st.header(":red[Major Cities Weather:]")
+        city_coordinates = [
+            ("Tel Aviv", 32.083, 34.783),
+            ("Jerusalem", 31.768, 35.214),
+            ("Haifa", 32.794, 34.989),
+            ("Eilat", 29.558, 34.951),
+            ("Paris", 48.857, 2.352),
+            ("London", 51.507, -0.128),
+            ("New York", 40.713, -74.006),
+            ("Los Angeles", 34.052, -118.244),
+            ("Miami", 25.761, -80.191),
+            ("Dallas", 32.776, -96.797),
+            ("Boston", 42.360, -71.058),
+            ("Toronto", 43.653, -79.383),
+            ("Rio de Janeiro", -22.907, -43.173),
+            ("Sydney", -33.869, 151.209),
+            ("Tokyo", 35.690, 139.692),
+            ("Moscow", 55.756, 37.617),
+            ("Beijing", 39.904, 116.407),
+            ("Mumbai", 19.076, 72.878),
+            ("Cairo", 30.044, 31.236),
+            ("Cape Town", -33.926, 18.423),
+            ("Berlin", 52.520, 13.405),
+            ("Madrid", 40.417, -3.704),
+            ("Rome", 41.903, 12.496),
+            ("Chicago", 41.878, -87.630),
+            ("Dubai", 25.205, 55.271),
+            ("Hong Kong", 22.286, 114.158),
+            ("Bangkok", 13.754, 100.502),
+            ("Singapore", 1.290, 103.850),
+            ("Istanbul", 41.008, 28.978),
+            ("Seoul", 37.567, 126.978),
+            ("Mexico City", 19.433, -99.133),
+            ("Buenos Aires", -34.604, -58.382),
+            ("Jakarta", -6.209, 106.846),
+            ("Lagos", 6.455, 3.394),
+            ("Lima", -12.046, -77.043),
+            ("Sao Paulo", -23.551, -46.633),
+            ("Karachi", 25.120, 67.001),
+            ("Kinshasa", -4.337, 15.327),
+            ("Bogota", 4.610, -74.072),
+            ("Vancouver", 49.2827, -123.1207),
+            ("San Francisco", 37.7749, -122.4194),
+            ("Shanghai", 31.2304, 121.4737),
+            ("Nairobi", -1.286389, 36.817223),
+            ("Johannesburg", -26.2041, 28.0473),
+            ("Accra", 5.6037, -0.1870),
+            ("Addis Ababa", 9.0301, 38.7200),
+            ("Casablanca", 33.5731, -7.5898),
+            ("Tunis", 36.8065, 10.1815)
+        ]
+
+        # Create an area to refresh the weather data
+        refresh_area = st.empty()
+
+        while True:
+            with refresh_area:
+                cols = st.columns(5)
+                tel_aviv_data = get_weather_data(32.083, 34.783, api_key=st.secrets['secret_key'])
+                if tel_aviv_data:
+                    with cols[0]:
+                        display_weather(tel_aviv_data)
+                else:
+                    st.error("Failed to fetch weather data for Tel Aviv. Please try again later.")
+
+                selected_cities = random.sample(city_coordinates[1:], k=4)
+                for i, (city_name, lat, lon) in enumerate(selected_cities):
+                    weather_data = get_weather_data(lat, lon, api_key=st.secrets['secret_key'])
+                    if weather_data:
+                        with cols[i + 1]:
+                            display_weather(weather_data)
+                    else:
+                        st.error(f"Failed to fetch weather data for {city_name}. Please try again later.")
+
+            time.sleep(2)
+
