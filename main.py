@@ -43,10 +43,11 @@ def display_weather(weather_data):
     local_time = utc_time + timedelta(seconds=weather_data['timezone'])
     formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    st.image(f"http://openweathermap.org/img/wn/{weather_data['weather'][0]['icon']}@2x.png", width=60)
+    st.image(f"http://openweathermap.org/img/wn/{weather_data['weather'][0]['icon']}@2x.png", width=60,)
     st.write(f"**{weather_data['name']}**")
     st.write(f"Temp: {weather_data['main']['temp']:.2f}°C")
     st.write(f"Humidity: {weather_data['main']['humidity']}%")
+    st.write(f"description: {weather_data['weather'][0]['description']}")
     st.write(f":clock3: {formatted_time}")
 
 # Streamlit app
@@ -83,7 +84,7 @@ with main_container:
             if weather_data:
                 display_weather(weather_data)
                 df = pd.DataFrame({'lat': [st.session_state.coordinates['lat']], 'lon': [st.session_state.coordinates['lon']]})
-                st.map(df, use_container_width=True, height=200)
+                st.map(df, use_container_width=True, height=180)
             else:
                 st.error("Failed to fetch weather data. Please try again later.")
 
