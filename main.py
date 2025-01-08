@@ -163,5 +163,5 @@ with main_container:
                     else:
                         st.error(f"Failed to fetch weather data for {city_name}. Please try again later.")
 
-            time.sleep(2)
+            time.sleep(8)
 
