@@ -2,7 +2,7 @@
 
 This Python-based weather app fetches and displays weather data for a specified city and country. It also shows weather data for five major cities, refreshing every 8 seconds, with Tel Aviv always included.
 
-**[Demo on Streamlit](https://weather-xcyw6hnvu2izthjrv2tqm2.streamlit.app/))))))**
+**[Demo on Streamlit](https://weather-xcyw6hnvu2izthjrv2tqm2.streamlit.app/)**
 
 ## Features
 - Input city and country to get weather data.
