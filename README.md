@@ -88,7 +88,15 @@ Endpoint: `http://api.openweathermap.org/geo/1.0/direct?q={city},{state},{countr
 
 **Explanation:** This function formats and displays the weather data using Streamlit. It calculates the local time based on the timezone offset, formats the time, and displays the weather icon, city name, temperature, humidity, description, and local time.
 
-## Refresh Interval
+
+## Streamlit App Functionality
+The Streamlit app allows users to enter a city and country to fetch the weather data and display a map for the location. The app uses three columns:
+
+Search Column: Allows users to input the city, country, and state to search for weather data.
+Weather Data & Map Column: Displays the weather data and a map for the searched location.
+Major Cities Column: Shows weather data for five major cities, refreshing every 8 seconds. Tel Aviv is always displayed and refreshed.
+
+### Refresh Interval
 The app refreshes every 8 seconds to comply with the OpenWeather API's limit of 60 calls per minute.
 
 ## Course Information
